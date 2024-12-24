@@ -1,11 +1,12 @@
 from flask import Flask,render_template,request
 from flask_socketio import SocketIO, emit
 import random
+import redis
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-# python dict. Store connected users. Key is socket id, value is username and avatarUrl 
+# python dict. Store connected users. Key is socket id, value is username and avatarUrl
 users = {}
 
 @app.route('/')
@@ -55,4 +56,4 @@ def handle_update_username(data):
     }, broadcast=True)
 
 if __name__ == "__main__":
-    socketio.run(app) 
+    socketio.run(app)
