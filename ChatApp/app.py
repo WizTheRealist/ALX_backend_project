@@ -1,58 +1,41 @@
-from flask import Flask,render_template,request
-from flask_socketio import SocketIO, emit
-import random
-
-app = Flask(__name__)
-socketio = SocketIO(app)
-
-# python dict. Store connected users. Key is socket id, value is username and avatarUrl 
-users = {}
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# we're listening for the connect event
-@socketio.on("connect")
-def handle_connect():
-    username = f"User_{random.randint(1000,9999)}"
-    gender = random.choice(["girl","boy"])
-    # https://avatar.iran.liara.run/public/boy?username=User_123
-    avatar_url = f" https://avatar.iran.liara.run/public/{gender}?username={username}"
-
-    users[request.sid] = { "username":username,"avatar":avatar_url}
-
-    emit("user_joined", {"username":username,"avatar":avatar_url},broadcast=True)
-
-    emit("set_username", {"username":username})
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    user = users.pop(request.sid, None)
-    if user:
-      emit("user_left", {"username":user["username"]},broadcast=True)
+from flask import Flask, app
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_socketio import SocketIO
+from extensions import db, login_manager, socketio
+from models import User  # Make sure the User model is correctly imported
 
 
-@socketio.on("send_message")
-def handle_message(data):
-    user = users.get(request.sid)
-    if user:
-        emit("new_message", {
-            "username":user["username"],
-            "avatar":user["avatar"],
-            "message":data["message"]
-        }, broadcast=True)
 
-@socketio.on("update_username")
-def handle_update_username(data):
-    old_username = users[request.sid]["username"]
-    new_username = data["username"]
-    users[request.sid]["username"] = new_username
 
-    emit("username_updated", {
-        "old_username":old_username,
-        "new_username":new_username
-    }, broadcast=True)
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object('config.Config')
+
+    # Initialize extensions
+    db.init_app(app)
+    login_manager.init_app(app)
+    socketio.init_app(app)
+
+    # Set the login view for flask-login
+    login_manager.login_view = "auth.login"
+
+    migrate = Migrate(app, db)
+
+    # Register blueprints
+    from routes.auth_routes import auth_bp
+    from routes.chat_routes import chat_bp
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(chat_bp)
+
+    return app
+
+# Define the user_loader function
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))  # Ensure that your User model is properly set up
 
 if __name__ == "__main__":
-    socketio.run(app) 
+    app = create_app()
+    socketio.run(app)
