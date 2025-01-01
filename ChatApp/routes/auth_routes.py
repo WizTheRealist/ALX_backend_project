@@ -17,7 +17,7 @@ class RegisterForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(),
         EqualTo('password', message='Passwords must match.')
-    ])
+    ], render_kw={"placeholder": "Confirm your password"})
     submit = SubmitField("Register")
 
     def validate_username(self, username):
