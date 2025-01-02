@@ -1,0 +1,19 @@
+# Python bytecode files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment folder
+venv/
+myenv/
+
+# Flask configuration
+instance/
+
+# Local environment variables
+*.env
+*.flaskenv
+
+# Migrations folder
+migrations/
