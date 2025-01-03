@@ -16,4 +16,4 @@ instance/
 *.flaskenv
 
 # Migrations folder
-migrations/
+#migrations/
